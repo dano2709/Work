@@ -6,7 +6,8 @@ const CONFIG = {
 const state = {
   token: localStorage.getItem("work_session_token") || "",
   user: null,
-  data: { notes: [], projects: [] },
+  data: { notes: [], projects: [], managerAccounts: [] },
+  hasAdmin: null,
   view: "calendar",
   month: new Date(),
   modal: null,
@@ -122,10 +123,18 @@ async function loadData() {
   state.user = payload.currentUser;
   state.data.notes = payload.notes || [];
   state.data.projects = payload.projects || [];
+  state.data.managerAccounts = payload.managerAccounts || [];
   localStorage.setItem("work_session_token", state.token);
 }
 
 async function init() {
+  try {
+    state.hasAdmin = await rpc("app_has_admin");
+  } catch (error) {
+    console.warn(error);
+    state.hasAdmin = true;
+  }
+
   if (state.token) {
     try {
       await loadData();
@@ -142,8 +151,9 @@ async function init() {
 }
 
 function renderLogin() {
+  const firstAdminMode = state.hasAdmin === false;
   document.getElementById("app").innerHTML = `
-    <section class="auth-shell">
+    <section class="auth-shell auth-centered">
       <div class="auth-panel">
         <div class="logo-lockup">
           <img src="assets/logo.svg" alt="Logo">
@@ -153,47 +163,91 @@ function renderLogin() {
           </div>
         </div>
 
-        <form class="auth-card" id="loginForm">
-          <h1>Přihlášení</h1>
-          <div data-error></div>
-
-          <div class="form-row">
-            <label for="username">Uživatelské jméno</label>
-            <input id="username" autocomplete="username" placeholder="admin nebo manager" required>
-          </div>
-          <div class="form-row">
-            <label for="password">Heslo</label>
-            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
-          </div>
-          <button class="btn primary" type="submit" style="width:100%">Přihlásit se</button>
-
-        </form>
+        ${firstAdminMode ? `
+          <form class="auth-card" id="initialAdminForm">
+            <h1>Vytvořit admin účet</h1>
+            <div data-error></div>
+            <div class="success-box">Nejdřív vytvoř hlavní admin účet. Další účty potom přidáš v nastavení.</div>
+            <div class="form-row">
+              <label for="initialName">Jméno</label>
+              <input id="initialName" autocomplete="name" placeholder="Daniel Třetina" required>
+            </div>
+            <div class="form-row">
+              <label for="initialUsername">Uživatelské jméno</label>
+              <input id="initialUsername" autocomplete="username" placeholder="např. daniel" required>
+            </div>
+            <div class="form-row">
+              <label for="initialPassword">Heslo</label>
+              <input id="initialPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Minimálně 6 znaků" required>
+            </div>
+            <button class="btn primary" type="submit" style="width:100%">Vytvořit admina</button>
+          </form>
+        ` : `
+          <form class="auth-card" id="loginForm">
+            <h1>Přihlášení</h1>
+            <div data-error></div>
+            <div class="form-row">
+              <label for="username">Uživatelské jméno</label>
+              <input id="username" autocomplete="username" required>
+            </div>
+            <div class="form-row">
+              <label for="password">Heslo</label>
+              <input id="password" type="password" autocomplete="current-password" required>
+            </div>
+            <button class="btn primary" type="submit" style="width:100%">Přihlásit se</button>
+          </form>
+        `}
       </div>
-
     </section>
   `;
 
-  document.getElementById("loginForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const button = event.submitter;
-    setLoading(button, true);
-    try {
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
-      const result = await rpc("login_user", { p_username: username, p_password: password });
-      state.token = result.token;
-      state.user = result.user;
-      await loadData();
-      renderApp();
-    } catch (error) {
-      const dbHint = error.message.includes("login_user")
-        ? "Vypadá to, že ještě není spuštěný SQL skript v Supabase. Nejdříve otevři soubor supabase/schema.sql v GitHubu a spusť ho v Supabase SQL Editoru."
-        : error.message;
-      showError(dbHint);
-    } finally {
-      setLoading(button, false);
-    }
-  });
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = event.submitter;
+      setLoading(button, true);
+      try {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const result = await rpc("login_user", { p_username: username, p_password: password });
+        state.token = result.token;
+        state.user = result.user;
+        await loadData();
+        renderApp();
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        setLoading(button, false);
+      }
+    });
+  }
+
+  const initialAdminForm = document.getElementById("initialAdminForm");
+  if (initialAdminForm) {
+    initialAdminForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = event.submitter;
+      setLoading(button, true);
+      try {
+        const result = await rpc("register_first_admin", {
+          p_name: document.getElementById("initialName").value.trim(),
+          p_username: document.getElementById("initialUsername").value.trim(),
+          p_password: document.getElementById("initialPassword").value
+        });
+        state.token = result.token;
+        state.user = result.user;
+        state.hasAdmin = true;
+        await loadData();
+        renderApp();
+        showToast("Admin účet byl vytvořen.");
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        setLoading(button, false);
+      }
+    });
+  }
 }
 
 function renderApp() {
@@ -208,7 +262,7 @@ function renderApp() {
         <nav class="nav">
           <button class="${state.view === "calendar" ? "active" : ""}" onclick="App.setView('calendar')">Kalendář</button>
           <button class="${state.view === "projects" ? "active" : ""}" onclick="App.setView('projects')">Projekty</button>
-          <button class="${state.view === "settings" ? "active" : ""}" onclick="App.setView('settings')">Nastavení</button>
+          ${isAdmin() ? `<button class="${state.view === "settings" ? "active" : ""}" onclick="App.setView('settings')">Nastavení</button>` : ""}
         </nav>
 
         <div class="sidebar-footer">
@@ -229,9 +283,12 @@ function renderApp() {
 }
 
 function renderPage() {
+  if (!isAdmin() && state.view === "settings") state.view = "calendar";
   if (state.view === "calendar") return renderCalendar();
   if (state.view === "projects") return renderProjects();
-  return renderSettings();
+  if (isAdmin()) return renderSettings();
+  state.view = "calendar";
+  return renderCalendar();
 }
 
 function renderCalendar() {
@@ -261,7 +318,6 @@ function renderCalendar() {
       </div>
       <div class="actions">
         <button class="btn" onclick="App.exportNotes()">Stáhnout všechny poznámky</button>
-        <button class="btn ghost" onclick="App.reload()">Obnovit</button>
       </div>
     </div>
 
@@ -540,6 +596,30 @@ async function handleModalForms(event) {
       setLoading(button, false);
     }
   }
+
+  const managerAccountForm = event.target.closest("#managerAccountForm");
+  if (managerAccountForm) {
+    event.preventDefault();
+    const button = event.submitter;
+    setLoading(button, true);
+    const form = new FormData(managerAccountForm);
+    try {
+      await rpc("create_manager_account", {
+        p_token: state.token,
+        p_name: form.get("name"),
+        p_username: form.get("username"),
+        p_password: form.get("password")
+      });
+      managerAccountForm.reset();
+      await reload(false);
+      showToast("Účet byl vytvořen a přiřazen k tomuto adminovi.");
+    } catch (error) {
+      showError(error.message);
+    } finally {
+      setLoading(button, false);
+    }
+  }
+
 }
 
 document.addEventListener("submit", handleModalForms);
@@ -728,7 +808,6 @@ function renderProjects() {
       </div>
       <div class="actions">
         ${isAdmin() ? `<button class="btn primary" onclick="App.openProjectForm()">Vytvořit projekt</button>` : ""}
-        <button class="btn ghost" onclick="App.reload()">Obnovit</button>
       </div>
     </div>
 
@@ -988,32 +1067,51 @@ function setRating(rating) {
 }
 
 function renderSettings() {
+  const managers = state.data.managerAccounts || [];
   document.getElementById("page").innerHTML = `
     <div class="topbar">
       <div>
         <div class="eyebrow">Nastavení</div>
-        <h1 class="page-title">Informace o aplikaci</h1>
-        <div class="page-subtitle">Aplikace běží z GitHubu a data ukládá do Supabase databáze.</div>
+        <h1 class="page-title">Správa účtů</h1>
+        <div class="page-subtitle">Tady může admin vytvářet účty pro manažerku. Každý vytvořený účet uvidí pouze data tohoto admin účtu.</div>
       </div>
     </div>
 
     <section class="settings-grid">
       <div class="card card-pad">
-        <h2>Název</h2>
-        <p>Přehled práce od Daniela Třetiny</p>
+        <h2>Vytvořit účet manažerky</h2>
+        <div data-error></div>
+        <form id="managerAccountForm" style="margin-top:16px">
+          <div class="form-row">
+            <label>Jméno</label>
+            <input name="name" placeholder="Např. Manažerka" required>
+          </div>
+          <div class="form-row">
+            <label>Uživatelské jméno</label>
+            <input name="username" placeholder="např. managerka1" required>
+          </div>
+          <div class="form-row">
+            <label>Heslo</label>
+            <input name="password" type="password" minlength="6" placeholder="Minimálně 6 znaků" required>
+          </div>
+          <button class="btn primary" type="submit">Vytvořit účet</button>
+        </form>
       </div>
+
       <div class="card card-pad">
-        <h2>Aktuální účet</h2>
-        <p><strong>${escapeHtml(state.user?.name || "")}</strong><br>${escapeHtml(roleLabel(state.user?.role))}</p>
+        <h2>Vytvořené účty</h2>
+        ${managers.length ? managers.map(account => `
+          <div class="note-item">
+            <h3>${escapeHtml(account.name)}</h3>
+            <div class="page-subtitle">Uživatelské jméno: <strong>${escapeHtml(account.username)}</strong></div>
+            <span class="badge">Přístup jen k tomuto admin účtu</span>
+          </div>
+        `).join("") : `<div class="empty">Zatím není vytvořený žádný manažerský účet.</div>`}
       </div>
+
       <div class="card card-pad">
-        <h2>Databáze</h2>
-        <p>Supabase PostgreSQL</p>
-        <div class="code">${escapeHtml(CONFIG.SUPABASE_URL)}</div>
-      </div>
-      <div class="card card-pad">
-        <h2>Oprávnění</h2>
-        <p>Admin může vytvářet, upravovat, mazat a přesouvat. Manažerka může číst a přidat hodnocení projektů.</p>
+        <h2>Aktuální admin</h2>
+        <p><strong>${escapeHtml(state.user?.name || "")}</strong><br>${escapeHtml(state.user?.username || "")}</p>
       </div>
     </section>
   `;
@@ -1026,11 +1124,13 @@ async function logout() {
   localStorage.removeItem("work_session_token");
   state.token = "";
   state.user = null;
-  state.data = { notes: [], projects: [] };
+  state.data = { notes: [], projects: [], managerAccounts: [] };
+  state.hasAdmin = null;
   renderLogin();
 }
 
 function setView(view) {
+  if (view === "settings" && !isAdmin()) return;
   state.view = view;
   renderApp();
 }
