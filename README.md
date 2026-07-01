@@ -22,18 +22,6 @@ Aplikace je připravená pro GitHub Pages a ukládá data do Supabase databáze.
 - Český font kompatibilní s diakritikou
 - Vlastní logo
 
-## Přihlašovací údaje po spuštění SQL
-
-```text
-Admin:
-admin
-admin123
-
-Manažerka:
-manager
-manager123
-```
-
 ## Důležitý první krok: vytvoření databáze
 
 1. Otevři Supabase.
@@ -48,7 +36,7 @@ supabase/schema.sql
 5. Vlož ho do Supabase SQL Editoru.
 6. Klikni na **Run**.
 
-Tím se vytvoří tabulky, role, přihlašování, demo data a bezpečnostní funkce.
+Tím se vytvoří tabulky, role, přihlašování, demo data a bezpečnostní funkce. Pokud přihlášení hlásí chybu `crypt`, spusť také `supabase/hotfix-login.sql`.
 
 ## GitHub Pages
 

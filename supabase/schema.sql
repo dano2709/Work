@@ -127,7 +127,7 @@ create or replace function public.current_app_user(p_token text)
 returns public.app_users
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -156,7 +156,7 @@ create or replace function public.assert_admin(p_token text)
 returns public.app_users
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -173,7 +173,7 @@ create or replace function public.assert_manager(p_token text)
 returns public.app_users
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -190,7 +190,7 @@ create or replace function public.login_user(p_username text, p_password text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -229,7 +229,7 @@ create or replace function public.logout_user(p_token text)
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
   delete from public.app_sessions
@@ -242,7 +242,7 @@ create or replace function public.get_app_data(p_token text)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -348,7 +348,7 @@ create or replace function public.add_calendar_note(
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -374,7 +374,7 @@ create or replace function public.update_calendar_note(
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -395,7 +395,7 @@ create or replace function public.delete_calendar_note(p_token text, p_note_id u
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -417,7 +417,7 @@ create or replace function public.add_calendar_document(
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -441,7 +441,7 @@ create or replace function public.get_calendar_document(p_token text, p_document
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -470,7 +470,7 @@ create or replace function public.delete_calendar_document(p_token text, p_docum
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -493,7 +493,7 @@ create or replace function public.create_project(
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -522,7 +522,7 @@ create or replace function public.update_project(
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -546,7 +546,7 @@ create or replace function public.move_project(p_token text, p_project_id uuid, 
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -565,7 +565,7 @@ create or replace function public.delete_project(p_token text, p_project_id uuid
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -580,7 +580,7 @@ create or replace function public.add_checklist_item(p_token text, p_project_id 
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -600,7 +600,7 @@ create or replace function public.update_checklist_item(p_token text, p_item_id 
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -619,7 +619,7 @@ create or replace function public.delete_checklist_item(p_token text, p_item_id 
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;
@@ -639,7 +639,7 @@ create or replace function public.save_project_review(
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_user public.app_users%rowtype;

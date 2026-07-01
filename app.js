@@ -155,7 +155,6 @@ function renderLogin() {
 
         <form class="auth-card" id="loginForm">
           <h1>Přihlášení</h1>
-          <p>Data se ukládají do online Supabase databáze. Manažerka může číst obsah a hodnotit projekty.</p>
           <div data-error></div>
 
           <div class="form-row">
@@ -168,37 +167,9 @@ function renderLogin() {
           </div>
           <button class="btn primary" type="submit" style="width:100%">Přihlásit se</button>
 
-          <div class="success-box" style="margin-top:18px">
-            Testovací účty po spuštění SQL:<br>
-            <strong>admin / admin123</strong><br>
-            <strong>manager / manager123</strong>
-          </div>
         </form>
       </div>
 
-      <div class="auth-visual">
-        <div class="auth-preview">
-          <div class="preview-grid">
-            <div class="preview-card">
-              <strong>Kalendář práce</strong>
-              Poznámky podle dnů, dokumenty ke stažení a přehledný export všech záznamů.
-              <div class="preview-dots"><span></span><span></span><span></span></div>
-            </div>
-            <div class="preview-card">
-              <strong>Projekty</strong>
-              Nápady, rozpracované projekty a hotové výstupy v čistém přehledu.
-            </div>
-            <div class="preview-card">
-              <strong>Role</strong>
-              Admin spravuje. Manažerka vidí a hodnotí.
-            </div>
-            <div class="preview-card">
-              <strong>Online databáze</strong>
-              Data nejsou jen v jednom počítači.
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
   `;
 

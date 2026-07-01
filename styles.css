@@ -40,7 +40,7 @@ button {
 .auth-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(320px, 460px) 1fr;
+  grid-template-columns: minmax(320px, 460px);
   background:
     radial-gradient(circle at 75% 25%, rgba(134, 210, 149, .32), transparent 30%),
     linear-gradient(135deg, #ffffff 0%, #f2faf5 100%);
